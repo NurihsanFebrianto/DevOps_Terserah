@@ -3,7 +3,7 @@
 #   CD : build 7 image Docker lalu push ke Docker Hub          (hanya push ke branch main)
 # Secret yang wajib dibuat di GitHub (Settings > Secrets and variables > Actions):
 #   DOCKERHUB_USERNAME  = username Docker Hub
-#   DOCKERHUB_TOKEN     = access token Docker Hub (izin Read & Write)
+#   DOCKERHUB_TOKEN      = access token Docker Hub (izin Read & Write)
 name: CI-CD Digital Safety Patrol
 
 on:
@@ -32,12 +32,14 @@ jobs:
 
       - name: Hitung informasi versi
         id: meta
+        shell: bash
         run: |
           echo "version=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
           echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
           echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
       - name: Validasi docker-compose.yml
+        shell: bash
         env:
           JWT_SECRET: ci-dummy-secret-1234567890
           INTERNAL_KEY: ci-dummy-internal-1234567890
@@ -50,12 +52,14 @@ jobs:
 
       - name: Install dan tes gateway
         working-directory: gateway
+        shell: bash
         run: |
           npm install --no-audit --no-fund
           npm test
 
       - name: Install dan build frontend
         working-directory: frontend
+        shell: bash
         run: |
           npm install --no-audit --no-fund
           npm run build
@@ -64,7 +68,7 @@ jobs:
     name: CD - Push image ${{ matrix.name }}
     needs: ci
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
@@ -102,16 +106,15 @@ jobs:
             APP_VERSION=${{ needs.ci.outputs.version }}
             GIT_COMMIT=${{ needs.ci.outputs.short_sha }}
             BUILD_TIME=${{ needs.ci.outputs.built_at }}
-          cache-from: type=gha,scope=${{ matrix.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
   summary:
     name: Ringkasan rilis
     needs: [ci, build-push]
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Tulis ringkasan
+        shell: bash
         run: |
           {
             echo "### Rilis berhasil dikirim ke Docker Hub"
@@ -122,9 +125,6 @@ jobs:
             echo "- Image: \`${{ secrets.DOCKERHUB_USERNAME }}/dsp-*\` (tag: latest, versi, sha)"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # OPSIONAL - deploy otomatis ke Docker di komputer sendiri memakai self-hosted runner.
-  # Aktif hanya jika variabel repository DEPLOY_TO_LOCAL = true (dan DEPLOY_PATH = folder proyek).
-  # Jika tidak diaktifkan, job ini dilewati dan deploy dilakukan manual dengan 'docker compose pull'.
   deploy:
     name: CD - Deploy ke Docker lokal
     needs: build-push
