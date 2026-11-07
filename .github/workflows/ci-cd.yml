@@ -39,7 +39,7 @@ jobs:
           $date = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
           "version=$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "short_sha=$sha" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "built_at=$date" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append"
+          "built_at=$date" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Validasi docker-compose.yml
         shell: bash
