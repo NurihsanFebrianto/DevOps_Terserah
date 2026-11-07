@@ -42,7 +42,7 @@ jobs:
           "built_at=$date" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Validasi docker-compose.yml
-        shell: bash
+        shell: powershell
         env:
           JWT_SECRET: ci-dummy-secret-1234567890
           INTERNAL_KEY: ci-dummy-internal-1234567890
@@ -55,14 +55,14 @@ jobs:
 
       - name: Install dan tes gateway
         working-directory: gateway
-        shell: bash
+        shell: powershell
         run: |
           npm install --no-audit --no-fund
           npm test
 
       - name: Install dan build frontend
         working-directory: frontend
-        shell: bash
+        shell: powershell
         run: |
           npm install --no-audit --no-fund
           npm run build
@@ -117,16 +117,17 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Tulis ringkasan
-        shell: bash
+        shell: powershell
         run: |
-          {
-            echo "### Rilis berhasil dikirim ke Docker Hub"
-            echo ""
-            echo "- Versi: **${{ needs.ci.outputs.version }}**"
-            echo "- Commit: \`${{ needs.ci.outputs.short_sha }}\`"
-            echo "- Waktu build: ${{ needs.ci.outputs.built_at }}"
-            echo "- Image: \`${{ secrets.DOCKERHUB_USERNAME }}/dsp-*\` (tag: latest, versi, sha)"
-          } >> "$GITHUB_STEP_SUMMARY"
+          $summary = @"
+          ### Rilis berhasil dikirim ke Docker Hub
+
+          - Versi: **${{ needs.ci.outputs.version }}**
+          - Commit: `${{ needs.ci.outputs.short_sha }}`
+          - Waktu build: ${{ needs.ci.outputs.built_at }}
+          - Image: `${{ secrets.DOCKERHUB_USERNAME }}/dsp-*` (tag: latest, versi, sha)
+          "@
+          $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
 
   deploy:
     name: CD - Deploy ke Docker lokal
@@ -136,7 +137,7 @@ jobs:
     steps:
       - name: Tarik image terbaru lalu jalankan ulang container
         working-directory: ${{ vars.DEPLOY_PATH }}
-        shell: bash
+        shell: powershell
         run: |
           docker compose -f docker-compose.yml -f docker-compose.hub.yml pull
           docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
