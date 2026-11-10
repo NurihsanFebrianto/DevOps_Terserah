@@ -15,6 +15,9 @@ RUN export DATABASE_URL="mysql://build:build@localhost:3306/build" \
 COPY src ./src
 COPY scripts ./scripts
 
+RUN sed -i 's/\r$//' ./scripts/entrypoint.sh \
+    && chmod +x ./scripts/entrypoint.sh
+
 ENV NODE_ENV=production
 USER node
 HEALTHCHECK --interval=15s --timeout=5s --start-period=90s --retries=5 \
